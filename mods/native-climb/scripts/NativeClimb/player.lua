@@ -309,7 +309,7 @@ local function begin(p)
     local hang=p.hang or (p.wall-p.fwd*C.wallClearance)
     hangPos=util.vector3(hang.x,hang.y,startPos.z)
     gripZ=math.max(startPos.z+C.hangRise,p.ledgeZ-C.handReach)
-    targetZ=p.ledgeZ+C.topClearance
+    targetZ=p.stepZ or p.ledgeZ+C.topClearance
     shimmyTarget,shimmySign,shimmyBlocked,shimmyOrigin=nil,nil,nil,nil
     mountWasMoving,lastSupportPos=false,nil
     if gripZ>=targetZ then gripZ=targetZ-4 end
@@ -337,9 +337,10 @@ local function scan(originZ)
     -- Do not increase maximum world-space reach merely because the jump rose.
     if originZ then
         maxHeight=math.min(maxHeight,originZ+maxHeight-self.position.z)
-        if maxHeight<C.minHeight then return false,false end
     end
-    local p,why,n=detector.find(C.minHeight,maxHeight,C.allowWater)
+    local stepOriginZ=input.isKeyPressed(input.KEY.W) and originZ or nil
+    if maxHeight<C.minHeight and not stepOriginZ then return false,false end
+    local p,why,n=detector.find(C.minHeight,maxHeight,C.allowWater,stepOriginZ)
     raycasts=raycasts+n
     if not p then
         if debug then log('SCAN miss: '..tostring(why)..' rays='..n..' (no climbing spell applied)') end
@@ -582,10 +583,15 @@ local function update(dt)
         return
     end
     local pos=self.position
+    local forwardHeld
+    if plan.stepZ then
+        forwardHeld=input.isKeyPressed(input.KEY.W)
+        if not forwardHeld then finish('Step-up cancelled.'); return end
+    end
     if pos.z<startPos.z-25 then finish('Fell during climb (levitation restriction or obstruction).'); return end
     if state=='approach' then
         local done,metric=driveXY(pos,hangPos)
-        if done then phase('grabbing')
+        if done then phase(plan.stepZ and 'ascending' or 'grabbing')
         elseif stalled(metric,dt) then
             log(string.format('APPROACH STALL remaining=%.2f planned clearance=%.2f current clearance=%.2f',metric,plan.clearance or 0,(plan.wall-pos):dot(plan.fwd)))
             finish('Approach obstructed: '..fmtDelta(pos,startPos)) end
@@ -610,14 +616,14 @@ local function update(dt)
                 startHeadMotion()
                 finish('Mantle complete (already supported).',true); return
             end
-            if input.isKeyPressed(input.KEY.W) then
+            if forwardHeld or input.isKeyPressed(input.KEY.W) then
                 updateMount(pos,dt,true)
             else
                 notify('Above ledge. Hold W to mount; S/F8 release.')
             end
         elseif stalled(metric,dt) then finish('Ascent obstructed: '..fmtDelta(pos,hangPos)) end
     elseif state=='above' or state=='mounting' then
-        updateMount(pos,dt,input.isKeyPressed(input.KEY.W))
+        updateMount(pos,dt,forwardHeld or input.isKeyPressed(input.KEY.W))
     else finish('Unexpected state '..tostring(state)) end
 end
 local function updateFrame(dt)

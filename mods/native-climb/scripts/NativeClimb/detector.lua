@@ -153,14 +153,8 @@ local function probeDirection(q, feet, direction, facing, low, high, waist)
     return planForFace(q, feet, face, inward, low, high, 0)
 end
 
-local function find(minHeight, maxHeight, allowWater)
-    local q = query(DETECTION_BUDGET)
-    local feet = self.position
-    local facing = atZ(self.rotation * vec(0, 1, 0), 0)
-    if facing:length() < 0.001 then return nil, 'no horizontal facing direction', 0 end
-    facing = facing:normalize()
-    if allowWater and Actor.isSwimming(self) then minHeight = math.min(30, minHeight) end
-    if minHeight > maxHeight then return nil, 'empty reach window', 0 end
+local function findLedge(q, feet, facing, minHeight, maxHeight)
+    if minHeight > maxHeight then return nil, 'empty reach window' end
     local low, high = feet.z + minHeight, feet.z + maxHeight
     local waist = math.max(18, math.min(48, minHeight * 0.68))
     local plan, reason = probeDirection(q, feet, facing, facing, low, high, waist)
@@ -172,10 +166,7 @@ local function find(minHeight, maxHeight, allowWater)
             plan = probeDirection(q, feet, centre - across, facing, low, high, waist)
         end
     end
-    if plan then plan.maxReach = maxHeight end
-    if not plan and q.exhausted then reason = 'grab ray budget reached' end
-    if plan then return plan, nil, q.count end
-    return nil, reason, q.count
+    return plan, reason
 end
 
 local function lip(plan, edge)
@@ -220,7 +211,7 @@ local function support(plan, pos)
     local q = query()
     local expected = plan.landingZ or plan.ledgeZ
     local valid = supportAt(q, pos, pos, plan.fwd, expected)
-    if not valid and C.supportForwardReach > 0 then
+    if not valid and not plan.stepZ and C.supportForwardReach > 0 then
         valid = supportAt(q, pos, pos + plan.fwd * C.supportForwardReach, plan.fwd, expected)
     end
     return valid, q.count
@@ -253,6 +244,52 @@ local function traversable(q, pos, inward, destination)
     end
     local ankle = destination + UP * 4
     return clear(q, ankle, ankle + inward * (BODY_RADIUS - 4))
+end
+
+local function findLowStep(q, feet, facing, originZ)
+    local low, high = originZ + C.stepMinHeight, originZ + C.minHeight
+    local hit, inward = wall(q, atZ(feet, low - 4), facing, C.scanReach, facing)
+    if not hit then return nil end
+    local edge = atZ(hit, feet.z)
+    local plan = planForFace(q, feet, edge, inward, low, high, 0)
+    if not plan or plan.ledgeZ >= high then return nil end
+
+    local top, targetZ = plan.ledgeZ, plan.ledgeZ + C.topClearance
+    -- A jump already above the clearance height can continue under native physics.
+    if feet.z >= targetZ then return nil end
+    local landing = atZ(edge + inward * BODY_RADIUS, targetZ)
+    local rear = landing + inward * 10
+    if not floor(q, rear, top + 4, top - 4)
+        or not supportAt(q, landing, landing, inward, top)
+        or not clearance(q, plan.hang, inward, targetZ + BODY_HEIGHT, feet.z + 5)
+        or not traversable(q, plan.hang, inward, landing) then return nil end
+
+    plan.stepZ = targetZ
+    plan.height = top - originZ
+    plan.method = 'low step'
+    return plan
+end
+
+local function find(minHeight, maxHeight, allowWater, stepOriginZ)
+    local q = query(DETECTION_BUDGET)
+    local feet = self.position
+    local facing = atZ(self.rotation * vec(0, 1, 0), 0)
+    if facing:length() < 0.001 then return nil, 'no horizontal facing direction', 0 end
+    facing = facing:normalize()
+    if allowWater and Actor.isSwimming(self) then
+        minHeight = math.min(30, minHeight)
+        stepOriginZ = nil
+    end
+    local plan, reason = findLedge(q, feet, facing, minHeight, maxHeight)
+    if not plan and stepOriginZ and not q.exhausted then
+        plan = findLowStep(q, feet, facing, stepOriginZ)
+    end
+    if plan then
+        plan.maxReach = math.max(maxHeight, plan.ledgeZ - feet.z)
+        return plan, nil, q.count
+    end
+    if q.exhausted then reason = 'grab ray budget reached' end
+    return nil, reason, q.count
 end
 
 local function mountCandidate(plan, pos, targetZ)

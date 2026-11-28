@@ -1,6 +1,7 @@
 -- Experimental build. Edit values here, then restart OpenMW.
 return {
     minHeight = 70,
+    stepMinHeight = 28,        -- vertical rise from the position at Space press
     maxHeight = 210,
     skillReach = true,         -- 0 Acrobatics: 150; 100: maxHeight (capped)
     bypassModifier = "Alt",   -- Alt / Ctrl / Shift / None; checked on Space or during an active grab window
