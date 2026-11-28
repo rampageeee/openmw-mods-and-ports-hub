@@ -304,8 +304,7 @@ local function begin(p)
     lockCamera()
     startCell=self.cell; startPos=self.position
     sessionTime,checkTime,totalTime=0,0,0
-    -- A conservative grip position just outside the wall. Rise to an approximate
-    -- hand-reach height, not yet synchronized to any custom animation.
+    -- Set the grip position outside the wall and within approximate hand reach.
     local hang=p.hang or (p.wall-p.fwd*C.wallClearance)
     hangPos=util.vector3(hang.x,hang.y,startPos.z)
     gripZ=math.max(startPos.z+C.hangRise,p.ledgeZ-C.handReach)

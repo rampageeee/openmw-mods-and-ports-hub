@@ -11,7 +11,7 @@ return {
     mantleHeadMotion = true,  -- first-person dip and tilt when stepping onto the ledge
     allowWater = false,        -- experimental; enable only after dry tests
     hangRise = 12,             -- min upward grab motion, units
-    handReach = 115,           -- approximate, not animation matched
+    handReach = 115,           -- approximate hand reach in world units
     wallClearance = 38,       -- minimum clearance (approx actor radius + margin)
     maxWallClearance = 62,    -- ordinary adaptive clearance search
     maxCorniceClearance = 100, -- extended only for a detected projecting face
