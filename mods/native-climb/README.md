@@ -30,6 +30,22 @@ If you stay hanging while W is held, you can shimmy to another spot or release a
 
 Open **Options → Scripts → Native Climb** to adjust the detection delay, retry window, and camera. The first-person camera dip on mounting is enabled by default. Space and W/A/S/D are physical keys.
 
+## First-person prone pose test
+
+In this test branch, press **F10** on dry ground in first person. The test holds you still, pitches the actor down, and puts the camera about 24 units above your feet. Mouse look remains available. Press **F10** again or open a menu to end the test. This test uses the installed first-person rig and leaves the collider at standing size.
+
+To test your own pose, import your active first-person skeleton in Blender with the [Morrowind Blender Plugin](https://blender-morrowind.readthedocs.io/en/latest/basics/importing.html). The default is `meshes/xbase_anim.1st.nif`. MO2's Data tab shows which mod supplies the file. Pose the bones in an Action with the armature object transform unchanged. At 30 FPS, key the same pose at frames 0 and 60. In the Action Editor's Morrowind panel, add text keys `ncproneidle: start` at frame 0 and `ncproneidle: stop` at frame 60. Export to a staging folder with **Export Animations** and **Extract Keyframe Data** enabled.
+
+Install just the exported KF as `Animations/xbase_anim.1st/ncproneidle.kf` in a separate MO2 mod. If your base first-person model uses a different path, mirror that path under `Animations` and replace the `.nif` extension with a directory of the same stem. Enable **Use additional anim sources** under **Launcher → Settings → Visuals → Animations** and restart OpenMW. With the F10 test off, switch to first person, open the console and run:
+
+```lua
+luap
+local a = require('openmw.animation'); print(a.hasGroup(require('openmw.self'), 'ncproneidle'))
+require('openmw.animation').playQueued(require('openmw.self'), 'ncproneidle', {loops=0})
+```
+
+Close the console to see the two-second pose. If the group check prints `false`, check the KF folder against the active skeleton path and confirm the exported file contains both text keys and bone channels.
+
 ## Performance and testing
 
 Ledge scans run after a held Space press. At default settings there are at most six scans per hold, each with a 60-ray ceiling. Pull-up checks use a separate 48-ray search budget for landing candidates. Shimmying and checking for support at the feet use local probes during the active climb. The detector does no idle scanning.

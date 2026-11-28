@@ -19,12 +19,16 @@ local Hold = require('scripts.NativeClimb.hold')
 local Actor = types.Actor
 local PREFIX = 'ag_nc_'
 local UP_PITCH = -math.rad(89.5)
+local PRONE_PROBE_PITCH = -UP_PITCH
+local PRONE_PROBE_EYE_HEIGHT = 24
 local state = 'idle'
 local plan, startCell, startPos, hangPos, gripZ, targetZ
 local sessionTime, phaseTime, checkTime, stallElapsed, stallSample = 0,0,0,0,0
 local bestMetric, sampleMetric
 local ownsControls, pitchOwned = false,false
 local savedPitch, savedExtra
+local proneOffsetBase, proneOffsetApplied
+local proneKeyHeld = false
 local yawCentre
 local function wrapAngle(a) return (a+math.pi)%(2*math.pi)-math.pi end
 local levId, fatId, pendingLev, armedNext
@@ -176,8 +180,17 @@ local function unlockCamera()
     end
     cameraOwned=false
 end
+local function restoreProneOffset()
+    if not proneOffsetApplied then return end
+    local base, applied=proneOffsetBase,proneOffsetApplied
+    proneOffsetBase,proneOffsetApplied=nil,nil
+    if (camera.getFirstPersonOffset()-applied):length()<0.001 then
+        camera.setFirstPersonOffset(base)
+    end
+end
 local function finish(reason, success)
     local wasActive=state~='idle' or ownsControls
+    local wasProneProbe=state=='proneProbe'
     -- Stop work before attempting cleanup; independent cleanup calls.
     state='idle'; clearWindow(); missWatch,missSamples=0,0
     if not success then pcall(headMotion.stop) end
@@ -192,6 +205,14 @@ local function finish(reason, success)
     if yawCentre then pcall(function() self.controls.yawChange=0 end) end
     unlockCamera()
     yawCentre=nil
+    if wasProneProbe then
+        startCell=nil
+        local ok,err=pcall(restoreProneOffset)
+        if not ok then log('prone offset cleanup error: '..tostring(err)) end
+        if ownsControls then queueCleanup() end
+        notify(reason or 'Prone pose test ended.')
+        return
+    end
     local ok,n=pcall(removeSpells)
     if not ok then log('spell cleanup error: '..tostring(n))
     elseif n>0 then log('CLEANUP requested '..n..' owned spell removal(s)') end
@@ -234,6 +255,29 @@ local function setPitch(p)
     local actual=self.rotation:getPitch()
     self.controls.pitchChange=p-actual
     return math.abs(p-actual)<math.rad(3)
+end
+local function toggleProneProbe()
+    if state=='proneProbe' then finish('Prone pose test ended.'); return end
+    if state~='idle' or ownsControls or cleanupLeft>0 or core.isWorldPaused() then return end
+    if camera.getMode()~=camera.MODE.FirstPerson or not Actor.isOnGround(self)
+        or Actor.isSwimming(self) or not Actor.canMove(self) or levitation()>0 then
+        notify('Stand on dry ground in first person to test the prone pose.')
+        return
+    end
+    if not I.Controls or not I.Controls.overrideMovementControls then
+        notify('Prone pose test requires OpenMW movement controls.')
+        return
+    end
+    settings.refresh()
+    clearWindow(); missWatch,missSamples=0,0
+    headMotion.stop()
+    state='proneProbe'; startCell=self.cell
+    lockCamera()
+    ownPitch()
+    ownsControls=true
+    I.Controls.overrideMovementControls(true)
+    stopMotion()
+    notify('Prone pose test. Press F10 to stand.')
 end
 -- Steer toward a fixed world-space point using actor-relative forward/strafe.
 -- Yaw is not forced, so player turning cannot redirect the traverse.
@@ -501,6 +545,17 @@ local function updateMount(pos,dt,held)
 end
 local function update(dt)
     if dt<=0 then return end
+    if state=='proneProbe' then
+        if self.cell~=startCell or camera.getMode()~=camera.MODE.FirstPerson
+            or not Actor.isOnGround(self) or Actor.isSwimming(self) or not Actor.canMove(self)
+            or levitation()>0 then
+            finish('Prone pose test ended.')
+            return
+        end
+        stopMotion()
+        if not menuOpen() and not core.isWorldPaused() then setPitch(PRONE_PROBE_PITCH) end
+        return
+    end
     if state=='idle' then
         if cleanupLeft>0 then
             cleanupLeft=math.max(0,cleanupLeft-dt); cleanupWait=cleanupWait-dt
@@ -622,6 +677,20 @@ local function update(dt)
 end
 local function updateFrame(dt)
     if menuOpen() or core.isWorldPaused() then return end
+    if state=='proneProbe' then
+        -- Ground-relative eye height plus the current camera node's movement.
+        local current=camera.getFirstPersonOffset()
+        if not proneOffsetApplied or (current-proneOffsetApplied):length()>=0.001 then
+            proneOffsetBase=current
+        end
+        local z=self.position.z+PRONE_PROBE_EYE_HEIGHT-camera.getTrackedPosition().z
+        local offset=util.vector3(proneOffsetBase.x,proneOffsetBase.y,z)
+        if (current-offset):length()>=0.001 then camera.setFirstPersonOffset(offset) end
+        proneOffsetApplied=offset
+        savedPitch=clamp(savedPitch+input.getMouseMoveY()*C.mousePitchGain,-math.rad(85),math.rad(85))
+        camera.setExtraPitch(savedPitch+savedExtra-camera.getPitch())
+        return
+    end
     local climbPitch
     if state~='idle' then
         if yawCentre and C.yawLimit<360 then
@@ -696,7 +765,11 @@ local function onKeyPress(key)
     if key.code==input.KEY.Space then onSpace(); return end
     if hold.isPending() and bypassHeld() then clearWindow() end
     if menuOpen() then return end
-    if key.code==input.KEY.W and state=='hanging' then
+    if key.code==input.KEY.F10 then
+        if proneKeyHeld then return end
+        proneKeyHeld=true
+        toggleProneProbe()
+    elseif key.code==input.KEY.W and state=='hanging' then
         if forwardPressUsed then return end
         forwardPressUsed=true
         pullUp(false)
@@ -717,7 +790,8 @@ return {engineHandlers={
     onKeyPress=function(key) guarded(onKeyPress,key) end,
     onKeyRelease=function(key)
         if key.code==input.KEY.Space then hold.release()
-        elseif key.code==input.KEY.W then forwardPressUsed=false end
+        elseif key.code==input.KEY.W then forwardPressUsed=false
+        elseif key.code==input.KEY.F10 then proneKeyHeld=false end
     end,
     onUpdate=function(dt)
         if state=='idle' and cleanupLeft<=0 and missSamples<=0 then return end
@@ -733,14 +807,23 @@ return {engineHandlers={
         else guarded(headMotion.stop) end
     end,
     onSave=function()
-        return {active=state~='idle' or ownsControls,pitchOwned=pitchOwned,pitch=savedPitch,extra=savedExtra}
+        return {active=state~='idle' or ownsControls,pitchOwned=pitchOwned,pitch=savedPitch,extra=savedExtra,
+            proneProbe=state=='proneProbe',proneOffsetBase=proneOffsetBase,proneOffsetApplied=proneOffsetApplied}
     end,
     onLoad=function(data)
         hold.sync(input.isKeyPressed(input.KEY.Space)); cleanupLeft=0; missWatch,missSamples=0,0
+        proneKeyHeld=input.isKeyPressed(input.KEY.F10)
         guarded(headMotion.stop)
+        if state=='proneProbe' then guarded(finish,'Prone pose test ended on load.') end
         if data and data.active then
             ownsControls=true; pitchOwned=data.pitchOwned or false; savedPitch=data.pitch; savedExtra=data.extra
-            guarded(finish,'Saved climb released on load.')
+            if data.proneProbe then
+                state='proneProbe'
+                proneOffsetBase,proneOffsetApplied=data.proneOffsetBase,data.proneOffsetApplied
+                guarded(finish,'Saved prone pose test ended.')
+            else
+                guarded(finish,'Saved climb released on load.')
+            end
         else
             guarded(removeSpells); queueCleanup()
         end
@@ -749,6 +832,8 @@ return {engineHandlers={
     UiModeChanged=function()
         -- Cancel even if the menu opens and closes before a timer would fire.
         hold.sync(input.isKeyPressed(input.KEY.Space))
+        proneKeyHeld=input.isKeyPressed(input.KEY.F10)
+        if state=='proneProbe' and menuOpen() then guarded(finish,'Prone pose test ended.'); return end
         if state=='hanging' then forwardPressUsed=input.isKeyPressed(input.KEY.W) end
         guarded(headMotion.stop)
     end,
