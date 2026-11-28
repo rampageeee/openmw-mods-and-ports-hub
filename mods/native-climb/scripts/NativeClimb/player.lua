@@ -25,6 +25,7 @@ local sessionTime, phaseTime, checkTime, stallElapsed, stallSample = 0,0,0,0,0
 local bestMetric, sampleMetric
 local ownsControls, pitchOwned = false,false
 local savedPitch, savedExtra
+local offsetBase, offsetApplied
 local yawCentre
 local function wrapAngle(a) return (a+math.pi)%(2*math.pi)-math.pi end
 local levId, fatId, pendingLev, armedNext
@@ -142,6 +143,32 @@ local function ownPitch()
         pitchOwned=true
     end
 end
+local function restoreClimbOffset()
+    if not offsetApplied then return end
+    local base, applied = offsetBase, offsetApplied
+    offsetBase, offsetApplied = nil, nil
+    if (camera.getFirstPersonOffset()-applied):length()<0.001 then
+        camera.setFirstPersonOffset(base)
+    end
+end
+local function updateClimbOffset()
+    if C.climbCameraOffset<=0 or (state~='grabbing' and state~='ascending')
+        or camera.getMode()~=camera.MODE.FirstPerson then
+        restoreClimbOffset()
+        return
+    end
+    local t=clamp((-self.rotation:getPitch()-math.rad(15))/math.rad(70),0,1)
+    if t==0 then
+        restoreClimbOffset()
+        return
+    end
+    local current=camera.getFirstPersonOffset()
+    if not offsetApplied or (current-offsetApplied):length()>=0.001 then offsetBase=current end
+    local forward=C.climbCameraOffset*t*t*(3-2*t)
+    local offset=offsetBase+util.vector3(0,forward,forward/3)
+    if (current-offset):length()>=0.001 then camera.setFirstPersonOffset(offset) end
+    offsetApplied=offset
+end
 local function playStep(right)
     if C.sounds then pcall(ambient.playSound,right and 'FootBareRight' or 'FootBareLeft',{volume=0.7}) end
 end
@@ -180,6 +207,8 @@ local function finish(reason, success)
     local wasActive=state~='idle' or ownsControls
     -- Stop work before attempting cleanup; independent cleanup calls.
     state='idle'; clearWindow(); missWatch,missSamples=0,0
+    local offsetOk,offsetErr=pcall(restoreClimbOffset)
+    if not offsetOk then log('camera offset cleanup error: '..tostring(offsetErr)) end
     if not success then pcall(headMotion.stop) end
     pcall(markers.clear); markerFailed=false
     if ownsControls then
@@ -624,6 +653,7 @@ local function updateFrame(dt)
     if menuOpen() or core.isWorldPaused() then return end
     local climbPitch
     if state~='idle' then
+        updateClimbOffset()
         if yawCentre and C.yawLimit<360 then
             local maxYaw=math.rad(C.yawLimit/2)
             local delta=wrapAngle(camera.getYaw()-yawCentre)
@@ -733,12 +763,17 @@ return {engineHandlers={
         else guarded(headMotion.stop) end
     end,
     onSave=function()
-        return {active=state~='idle' or ownsControls,pitchOwned=pitchOwned,pitch=savedPitch,extra=savedExtra}
+        return {active=state~='idle' or ownsControls,pitchOwned=pitchOwned,pitch=savedPitch,extra=savedExtra,
+            firstPersonOffsetBase=offsetBase,firstPersonOffsetApplied=offsetApplied}
     end,
     onLoad=function(data)
         hold.sync(input.isKeyPressed(input.KEY.Space)); cleanupLeft=0; missWatch,missSamples=0,0
         guarded(headMotion.stop)
+        guarded(restoreClimbOffset)
         if data and data.active then
+            if data.firstPersonOffsetBase and data.firstPersonOffsetApplied then
+                offsetBase,offsetApplied=data.firstPersonOffsetBase,data.firstPersonOffsetApplied
+            end
             ownsControls=true; pitchOwned=data.pitchOwned or false; savedPitch=data.pitch; savedExtra=data.extra
             guarded(finish,'Saved climb released on load.')
         else
@@ -750,6 +785,7 @@ return {engineHandlers={
         -- Cancel even if the menu opens and closes before a timer would fire.
         hold.sync(input.isKeyPressed(input.KEY.Space))
         if state=='hanging' then forwardPressUsed=input.isKeyPressed(input.KEY.W) end
+        guarded(restoreClimbOffset)
         guarded(headMotion.stop)
     end,
 }}

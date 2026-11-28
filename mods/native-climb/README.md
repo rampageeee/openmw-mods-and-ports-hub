@@ -30,6 +30,8 @@ If you stay hanging while W is held, you can shimmy to another spot or release a
 
 Open **Options → Scripts → Native Climb** to adjust the detection delay, retry window, and camera. The first-person camera dip on mounting is enabled by default. Space and W/A/S/D are physical keys.
 
+If Full Body Awareness puts the neck or chest in view during a climb, try **First-person body clearance** at **12**. It moves the camera forward and slightly up during vertical climbing. The setting defaults to zero. The offset adds no raycasts and needs an in-game check with your body and armor setup.
+
 ## Performance and testing
 
 Ledge scans run after a held Space press. At default settings there are at most six scans per hold, each with a 60-ray ceiling. Pull-up checks use a separate 48-ray search budget for landing candidates. Shimmying and checking for support at the feet use local probes during the active climb. The detector does no idle scanning.

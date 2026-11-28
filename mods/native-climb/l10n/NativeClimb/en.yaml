@@ -19,3 +19,5 @@ grabScanWindow: Armed retry window (seconds)
 grabScanWindowDesc: Maximum additional time after the first search. Zero means one search only.
 mantleHeadMotion: Mantle head movement
 mantleHeadMotionDesc: Gently dip and tilt the first-person view as you move onto a ledge. Mouse look stays available.
+climbCameraOffset: First-person body clearance
+climbCameraOffsetDesc: Move the first-person camera forward and slightly up during vertical climbing. Try 12 with Full Body Awareness. Zero disables the offset.
