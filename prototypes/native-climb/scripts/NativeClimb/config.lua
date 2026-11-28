@@ -7,7 +7,6 @@ return {
     grabHoldDelay = 0.35,      -- uninterrupted Space hold, simulation seconds
     grabScanInterval = 0.20,   -- delay between armed scans
     grabScanWindow = 1.0,     -- maximum retry window after first scan
-    continuousMantle = false, -- holding W at a secure grip starts a validated mantle
     mantleHeadMotion = true,  -- first-person dip and tilt when stepping onto the ledge
     allowWater = false,        -- experimental; enable only after dry tests
     hangRise = 12,             -- min upward grab motion, units

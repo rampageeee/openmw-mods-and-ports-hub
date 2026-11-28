@@ -39,6 +39,7 @@ local totalTime = 0
 local shimmyTarget, shimmySign, shimmyBlocked, shimmyOrigin
 local shimmyRate=0.2
 local mountWasMoving, lastSupportPos = false,nil
+local forwardPressUsed = false
 local headMotionUsed = false
 local function countResult(result,n) raycasts=raycasts+(n or 0); return result end
 local function clamp(x,a,b) return math.max(a,math.min(b,x)) end
@@ -389,14 +390,14 @@ local function shimmy(pos,dt)
         endShimmy(pos)
     end
 end
-local function pullUp(continuous)
+local function pullUp(fromGrab)
     if state~='hanging' or menuOpen() or core.isWorldPaused() then return end
     if shimmyOrigin then endShimmy(self.position) end
     local pos=self.position
     targetZ=plan.ledgeZ+C.topClearance
     plan.landingZ=nil
     -- The automatic attempt is at the original grip, already profiled on grab.
-    if not continuous then profileLedge() end
+    if not fromGrab then profileLedge() end
     markCall(markers.set,'landing','landing',nil,''); markCall(markers.set,'blocked','blocked',nil,'')
     local candidate=countResult(detector.mountCandidate(plan,pos,targetZ))
     local function clearCandidate(c)
@@ -419,7 +420,7 @@ local function pullUp(continuous)
         markCall(markers.set,'blocked','blocked',nil,'')
         targetZ=candidate.z; plan.landingZ=candidate.landingZ
         if debug then log(string.format('MOUNT candidate landingZ=%.1f targetZ=%.1f',candidate.landingZ,targetZ)) end
-    elseif continuous then
+    elseif fromGrab then
         return
     else
         if not countResult(detector.ascentClear(plan,pos,targetZ)) then
@@ -593,9 +594,10 @@ local function update(dt)
         if done then
             stopMotion(); hangPos=pos; phase('hanging')
             log('GRIP '..fmtDelta(pos,startPos))
-            if C.continuousMantle and input.isKeyPressed(input.KEY.W) then pullUp(true) end
+            forwardPressUsed=input.isKeyPressed(input.KEY.W)
+            if forwardPressUsed then pullUp(true) end
             if state=='hanging' then
-                playStep(false); notify('Hanging. A/D shimmy; Space pull up; S/F8 release.')
+                playStep(false); notify('Hanging. A/D shimmy; W pull up; S/F8 release.')
             end
         elseif stalled(metric,dt) then finish('Grab ascent obstructed: '..fmtDelta(pos,startPos)) end
     elseif state=='ascending' then
@@ -608,7 +610,7 @@ local function update(dt)
                 startHeadMotion()
                 finish('Mantle complete (already supported).',true); return
             end
-            if C.continuousMantle and input.isKeyPressed(input.KEY.W) then
+            if input.isKeyPressed(input.KEY.W) then
                 updateMount(pos,dt,true)
             else
                 notify('Above ledge. Hold W to mount; S/F8 release.')
@@ -682,10 +684,9 @@ hold=Hold.new{
 }
 local function onSpace()
     -- Physical Space is the climb intent key; vanilla Jump remains untouched.
-    -- Keep the press latch even when a grab succeeds so repeat events cannot pull up.
+    -- Latch the physical press so repeats cannot start another grab window.
     if not hold.press() then return end
     if menuOpen() or core.isWorldPaused() then return end
-    if state=='hanging' then pullUp(); return end
     if state~='idle' or cleanupLeft>0 or ownsControls or bypassHeld() then return end
     settings.refresh()
     raycasts=0; missWatch,missSamples=0,0
@@ -695,7 +696,11 @@ local function onKeyPress(key)
     if key.code==input.KEY.Space then onSpace(); return end
     if hold.isPending() and bypassHeld() then clearWindow() end
     if menuOpen() then return end
-    if key.code==input.KEY.F8 or (key.code==input.KEY.S and state~='idle') then
+    if key.code==input.KEY.W and state=='hanging' then
+        if forwardPressUsed then return end
+        forwardPressUsed=true
+        pullUp(false)
+    elseif key.code==input.KEY.F8 or (key.code==input.KEY.S and state~='idle') then
         if state~='idle' or ownsControls then finish('Manual release.')
         elseif key.code==input.KEY.F8 then
             clearWindow(); spellDiagnostics(); removeSpells(); queueCleanup()
@@ -710,7 +715,10 @@ local function onKeyPress(key)
 end
 return {engineHandlers={
     onKeyPress=function(key) guarded(onKeyPress,key) end,
-    onKeyRelease=function(key) if key.code==input.KEY.Space then hold.release() end end,
+    onKeyRelease=function(key)
+        if key.code==input.KEY.Space then hold.release()
+        elseif key.code==input.KEY.W then forwardPressUsed=false end
+    end,
     onUpdate=function(dt)
         if state=='idle' and cleanupLeft<=0 and missSamples<=0 then return end
         guarded(update,dt)
@@ -741,6 +749,7 @@ return {engineHandlers={
     UiModeChanged=function()
         -- Cancel even if the menu opens and closes before a timer would fire.
         hold.sync(input.isKeyPressed(input.KEY.Space))
+        if state=='hanging' then forwardPressUsed=input.isKeyPressed(input.KEY.W) end
         guarded(headMotion.stop)
     end,
 }}

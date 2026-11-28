@@ -5,7 +5,7 @@ local C = require('scripts.NativeClimb.config')
 local M={}
 local key='SettingsNativeClimb'
 local section
-local defaults={ledgeMarkers=C.ledgeMarkers,preferBackedLanding=C.preferBackedLanding,freePitch=C.freePitch,yawLimit=C.yawLimit,mousePitchGain=C.mousePitchGain,grabHoldDelay=C.grabHoldDelay,grabScanInterval=C.grabScanInterval,grabScanWindow=C.grabScanWindow,continuousMantle=C.continuousMantle,mantleHeadMotion=C.mantleHeadMotion}
+local defaults={ledgeMarkers=C.ledgeMarkers,preferBackedLanding=C.preferBackedLanding,freePitch=C.freePitch,yawLimit=C.yawLimit,mousePitchGain=C.mousePitchGain,grabHoldDelay=C.grabHoldDelay,grabScanInterval=C.grabScanInterval,grabScanWindow=C.grabScanWindow,mantleHeadMotion=C.mantleHeadMotion}
 if I.Settings then
     local ok,err=pcall(function()
         I.Settings.registerPage{key='NativeClimb',l10n='NativeClimb',name='pageName',description='pageDescription'}
@@ -13,7 +13,6 @@ if I.Settings then
             {key='grabHoldDelay',renderer='number',name='grabHoldDelay',description='grabHoldDelayDesc',default=defaults.grabHoldDelay,argument={min=0.1,max=1.5}},
             {key='grabScanInterval',renderer='number',name='grabScanInterval',description='grabScanIntervalDesc',default=defaults.grabScanInterval,argument={min=0.1,max=0.5}},
             {key='grabScanWindow',renderer='number',name='grabScanWindow',description='grabScanWindowDesc',default=defaults.grabScanWindow,argument={min=0,max=2}},
-            {key='continuousMantle',renderer='checkbox',name='continuousMantle',description='continuousMantleDesc',default=defaults.continuousMantle},
             {key='mantleHeadMotion',renderer='checkbox',name='mantleHeadMotion',description='mantleHeadMotionDesc',default=defaults.mantleHeadMotion},
             {key='ledgeMarkers',renderer='checkbox',name='ledgeMarkers',description='ledgeMarkersDesc',default=defaults.ledgeMarkers},
             {key='preferBackedLanding',renderer='checkbox',name='preferBackedLanding',description='preferBackedLandingDesc',default=defaults.preferBackedLanding},
@@ -27,7 +26,7 @@ if I.Settings then
 end
 function M.refresh()
     if not section then return end
-    for _,k in ipairs({'ledgeMarkers','preferBackedLanding','freePitch','yawLimit','mousePitchGain','grabHoldDelay','grabScanInterval','grabScanWindow','continuousMantle','mantleHeadMotion'}) do
+    for _,k in ipairs({'ledgeMarkers','preferBackedLanding','freePitch','yawLimit','mousePitchGain','grabHoldDelay','grabScanInterval','grabScanWindow','mantleHeadMotion'}) do
         local v=section:get(k)
         if k=='grabHoldDelay' then
             if type(v)=='number' then C[k]=math.max(0.1,math.min(1.5,v)) end

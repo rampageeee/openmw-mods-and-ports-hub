@@ -1,6 +1,6 @@
-# Native Climb v0.12 for OpenMW 0.51
+# Native Climb v0.13 for OpenMW 0.51
 
-A climbing prototype with held-input ledge detection, shimmying, and an optional continuous mantle. Movement uses native OpenMW movement controls and temporary Levitate effects. Original ledge detection starts from the collision surface and uses its normal to orient the grab.
+A climbing prototype with held-input ledge detection, shimmying, and W to pull up and mantle. Movement uses native OpenMW movement controls and temporary Levitate effects. Original ledge detection starts from the collision surface and uses its normal to orient the grab.
 
 ## Install
 
@@ -19,14 +19,16 @@ A climbing prototype with held-input ledge detection, shimmying, and an optional
 | Input | Action |
 | --- | --- |
 | Tap Space | Jump normally. |
-| Hold Space | Start ledge detection after 0.35 simulation seconds by default. Release Space to cancel pending scans. |
+| Hold Space | Start ledge detection after 0.35 simulation seconds by default. Release Space to cancel pending scans. Hold Space alone to grab and hang. |
 | Alt + Space | Jump with ledge detection bypassed. |
 | A or D while hanging | Shimmy along the same lip. |
-| Fresh Space press while hanging | Pull up. |
-| W at the top | Move forward onto the ledge. |
+| W while hanging | Pull up. Keep W held to move forward onto the ledge. |
+| W already held at the grab | Continue into a mantle when a landing route is found. |
 | S or F8 during a climb | Release. |
 
-Open **Options → Scripts → Native Climb** to adjust the detection delay, retry window, and camera. Enable **Continuous mantle** to pull up automatically when W is held at the grip and a landing route is found. Keep W held to move over the lip. The first-person camera dip on mounting is enabled by default. Space and W/A/S/D are physical keys.
+If you stay hanging while W is held, you can shimmy to another spot or release and press W again to try a manual pull-up. If you release W during a pull-up, the forward move waits at the top until you hold W again.
+
+Open **Options → Scripts → Native Climb** to adjust the detection delay, retry window, and camera. The first-person camera dip on mounting is enabled by default. Space and W/A/S/D are physical keys.
 
 ## Performance and testing
 

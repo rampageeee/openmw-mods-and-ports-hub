@@ -17,7 +17,5 @@ grabScanInterval: Armed scan interval (seconds)
 grabScanIntervalDesc: Time between ledge searches while Space is held.
 grabScanWindow: Armed retry window (seconds)
 grabScanWindowDesc: Maximum additional time after the first search. Zero means one search only.
-continuousMantle: Continuous mantle (experimental)
-continuousMantleDesc: Keep W held as you grab to pull up automatically when a landing route is found. Keep W held to move onto the ledge. Releasing W before the grab leaves you hanging.
 mantleHeadMotion: Mantle head movement
 mantleHeadMotionDesc: Gently dip and tilt the first-person view as you move onto a ledge. Mouse look stays available.
