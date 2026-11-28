@@ -1,0 +1,21 @@
+pageName: Native Climb
+pageDescription: Interactive native-physics climbing. Input settings apply on the next Space press; camera settings on the next grab.
+groupName: Climbing input, camera and diagnostics
+ledgeMarkers: Show diagnostic ledge markers
+ledgeMarkersDesc: Shows selected grip, higher surface samples, planned landing and blocked ascent during climbing.
+preferBackedLanding: Prefer higher backed platform (experimental)
+preferBackedLandingDesc: Prefer a validated higher continuous landing behind the lip, with ordinary landing as fallback. Changes apply on next grab.
+freePitch: Vertical mouse look while climbing
+freePitchDesc: Allows independent vertical viewing while scripted movement controls pitch.
+yawLimit: Horizontal look arc (degrees)
+yawLimitDesc: Total angle around the ledge direction. 160 means 80 degrees to either side. 360 disables the limit.
+mousePitchGain: Vertical mouse sensitivity multiplier
+mousePitchGainDesc: 1 is the default. Negative values invert the vertical axis.
+grabHoldDelay: Hold Space to arm (seconds)
+grabHoldDelayDesc: A short tap jumps normally. Hold Space continuously for this long to start ledge detection.
+grabScanInterval: Armed scan interval (seconds)
+grabScanIntervalDesc: Time between ledge searches while Space is held.
+grabScanWindow: Armed retry window (seconds)
+grabScanWindowDesc: Maximum additional time after the first search. Zero means one search only.
+mantleHeadMotion: Mantle head movement
+mantleHeadMotionDesc: Gently dip and tilt the first-person view as you move onto a ledge. Mouse look stays available.

@@ -7,6 +7,7 @@ Lua mods and patches for playing Morrowind in OpenMW.
 | Mod | What it does |
 | --- | --- |
 | [The Art of Alchemy](mods/art-of-alchemy/README.md) | Brew, refine, and purify potions with placed apparatus. Discover ingredient effects, grind raw materials, and save recipes. |
+| [Native Climb](mods/native-climb/README.md) | Grab ledges, shimmy, and mantle with held-key controls in OpenMW 0.51. |
 | [Universal Container Sorter](mods/universal-container-sorter/README.md) | Deposit items by category or quickly stack items that match the contents of an open container. |
 
 Add the folder for each mod you use as a separate OpenMW data directory and enable its script list. Each folder has its own installation instructions and credits.
