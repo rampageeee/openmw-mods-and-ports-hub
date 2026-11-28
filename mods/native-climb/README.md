@@ -1,6 +1,6 @@
 # Native Climb v0.13 for OpenMW 0.51
 
-A climbing prototype with held-input ledge detection, shimmying, and W to pull up and mantle. Movement uses native OpenMW movement controls and temporary Levitate effects. Original ledge detection starts from the collision surface and uses its normal to orient the grab.
+A climbing mod with held-input ledge detection, shimmying, and W to pull up and mantle. Movement uses native OpenMW movement controls and temporary Levitate effects. Original ledge detection starts from the collision surface and uses its normal to orient the grab.
 
 ## Install
 
@@ -34,7 +34,7 @@ Open **Options → Scripts → Native Climb** to adjust the detection delay, ret
 
 Ledge scans run after a held Space press. At default settings there are at most six scans per hold, each with a 60-ray ceiling. Pull-up checks use a separate 48-ray search budget for landing candidates. Shimmying and checking for support at the feet use local probes during the active climb. The detector does no idle scanning.
 
-In offline box scenes, initial scans used 9 rays in open space, 15 for a crate viewed square-on or at 30°, and 15 for a projecting cornice with room to hang. Lua syntax, input transitions, camera cleanup, and collision decisions passed offline tests. Collision on Morrowind meshes and in-game timing still need testing. The detector samples selected heights and directions, so thin ledges and irregular collision meshes are useful test cases.
+In offline box scenes, initial scans used 9 rays in open space, 15 for a crate viewed square-on or at 30°, and 15 for a projecting cornice with room to hang. Lua syntax, input transitions, camera cleanup, and collision decisions passed offline tests. The controls have been tested in game. Coverage across Morrowind meshes and performance on real scenes vary with geometry. The detector samples selected heights and directions, so thin ledges and irregular collision meshes are useful test cases.
 
 With diagnostics enabled, search `openmw.log` for `[NativeClimb]`. F7 toggles scan logging, and F6 reports the current climb state. The log reports ray counts on successful grabs and missed scans.
 
