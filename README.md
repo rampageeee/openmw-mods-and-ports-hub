@@ -15,6 +15,7 @@ Add the folder for each mod you use as a separate OpenMW data directory and enab
 
 | Prototype | What it does |
 | --- | --- |
+| [Native Climb](prototypes/native-climb/README.md) | Test held-input ledge detection, shimmying, and continuous mantling in OpenMW 0.51. |
 | [Ultimate Fishing](prototypes/ultimate-fishing/README.md) | Test casting, timed bites, and line tension in OpenMW 0.51.0 using the original mod's pole and fish records. |
 
 ## Patches

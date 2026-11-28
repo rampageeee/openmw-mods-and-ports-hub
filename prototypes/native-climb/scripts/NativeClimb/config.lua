@@ -1,0 +1,50 @@
+-- Experimental build. Edit values here, then restart OpenMW.
+return {
+    minHeight = 70,
+    maxHeight = 210,
+    skillReach = true,         -- 0 Acrobatics: 150; 100: maxHeight (capped)
+    bypassModifier = "Alt",   -- Alt / Ctrl / Shift / None; checked on Space or during an active grab window
+    grabHoldDelay = 0.35,      -- uninterrupted Space hold, simulation seconds
+    grabScanInterval = 0.20,   -- delay between armed scans
+    grabScanWindow = 1.0,     -- maximum retry window after first scan
+    continuousMantle = false, -- holding W at a secure grip starts a validated mantle
+    mantleHeadMotion = true,  -- first-person dip and tilt when stepping onto the ledge
+    allowWater = false,        -- experimental; enable only after dry tests
+    hangRise = 12,             -- min upward grab motion, units
+    handReach = 115,           -- approximate, not animation matched
+    wallClearance = 38,       -- minimum clearance (approx actor radius + margin)
+    maxWallClearance = 62,    -- ordinary adaptive clearance search
+    maxCorniceClearance = 100, -- extended only for a detected projecting face
+    scanReach = 90,          -- maximum horizontal edge detection reach
+    topClearance = 10,
+    shimmySpeed = 0.20,        -- fractional movement input; Athletics modifies it
+    shimmyStep = 12,           -- validated lateral segment length
+    shimmyTolerance = 2,
+    mountSpeed = 1.0,          -- full movement input while W is held
+    mountMaxDepth = 66,        -- maximum centre displacement beyond edge
+    mountProbeStep = 0,        -- support test on each movement update near lip
+    mountSupportTolerance = 12,
+    supportForwardReach = 12, -- conservative front portion of actor footprint
+    mountStepUp = 24, -- allow nearby higher landing surface behind cornice
+    yawLimit = 160, -- total horizontal look arc; 360 disables restriction
+    shimmyHeightTolerance = 8,
+
+    horizontalTolerance = 7,
+    minimumFatigue = 5,
+    pullUpCost = 8,            -- one-time fatigue debit
+    maxHangCost = 8,          -- extra points/s at Athletics 0; quadratic decay
+    fatigueEnabled = true,
+    skillXP = true,
+    maxSession = 120,          -- finite safety limit; spell bank lasts 180 s
+    stallTime = 1.5,
+    phaseTimeout = 8,
+    compensate = true,
+    freePitch = true,          -- experimental mouse-look during pitch override
+    mousePitchGain = 1/256,    -- raw mouse radians/count; multiply by camera sensitivity and Y multiplier; negate for inverted mouse
+    thirdPerson = true,       -- experimental; disable camera 360 movement for testing
+    ledgeMarkers = true,     -- diagnostic overlay during a climb only
+    preferBackedLanding = false, -- optional A/B test: prefer a higher continuous platform
+    sounds = true,
+    diagnoseMissedJump = true, -- two bounded magic-state checks after a missed Jump; disable after diagnosis
+    debug = true,
+}
