@@ -8,6 +8,7 @@ return {
     grabScanInterval = 0.20,   -- delay between armed scans
     grabScanWindow = 1.0,     -- maximum retry window after first scan
     mantleHeadMotion = true,  -- first-person dip and tilt when stepping onto the ledge
+    climbCameraOffset = 0,    -- forward camera offset for first-person body clipping
     allowWater = false,        -- experimental; enable only after dry tests
     hangRise = 12,             -- min upward grab motion, units
     handReach = 115,           -- approximate hand reach in world units

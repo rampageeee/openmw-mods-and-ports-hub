@@ -14,6 +14,7 @@ if I.Settings then
             {key='grabScanInterval',renderer='number',name='grabScanInterval',description='grabScanIntervalDesc',default=defaults.grabScanInterval,argument={min=0.1,max=0.5}},
             {key='grabScanWindow',renderer='number',name='grabScanWindow',description='grabScanWindowDesc',default=defaults.grabScanWindow,argument={min=0,max=2}},
             {key='mantleHeadMotion',renderer='checkbox',name='mantleHeadMotion',description='mantleHeadMotionDesc',default=defaults.mantleHeadMotion},
+            {key='climbCameraOffset',renderer='number',name='climbCameraOffset',description='climbCameraOffsetDesc',default=C.climbCameraOffset,argument={min=0,max=20}},
             {key='ledgeMarkers',renderer='checkbox',name='ledgeMarkers',description='ledgeMarkersDesc',default=defaults.ledgeMarkers},
             {key='preferBackedLanding',renderer='checkbox',name='preferBackedLanding',description='preferBackedLandingDesc',default=defaults.preferBackedLanding},
             {key='freePitch',renderer='checkbox',name='freePitch',description='freePitchDesc',default=defaults.freePitch},
@@ -26,7 +27,7 @@ if I.Settings then
 end
 function M.refresh()
     if not section then return end
-    for _,k in ipairs({'ledgeMarkers','preferBackedLanding','freePitch','yawLimit','mousePitchGain','grabHoldDelay','grabScanInterval','grabScanWindow','mantleHeadMotion'}) do
+    for _,k in ipairs({'ledgeMarkers','preferBackedLanding','freePitch','yawLimit','mousePitchGain','grabHoldDelay','grabScanInterval','grabScanWindow','mantleHeadMotion','climbCameraOffset'}) do
         local v=section:get(k)
         if k=='grabHoldDelay' then
             if type(v)=='number' then C[k]=math.max(0.1,math.min(1.5,v)) end
@@ -34,6 +35,8 @@ function M.refresh()
             if type(v)=='number' then C[k]=math.max(0.1,math.min(0.5,v)) end
         elseif k=='grabScanWindow' then
             if type(v)=='number' then C[k]=math.max(0,math.min(2,v)) end
+        elseif k=='climbCameraOffset' then
+            if type(v)=='number' then C[k]=math.max(0,math.min(20,v)) end
         elseif k=='mousePitchGain' then
             if type(v)=='number' then C[k]=math.max(-5,math.min(5,v))/256 end
         elseif k=='yawLimit' then
